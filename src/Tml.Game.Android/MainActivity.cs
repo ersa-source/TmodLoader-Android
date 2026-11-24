@@ -39,7 +39,7 @@ public sealed partial class MainActivity : Activity
     private async Task PlayAsync()
     {
         if (busy) return;
-        SetBusy(true, L("Preparando os arquivos do jogo…", "Preparing game files…", "Preparando archivos del juego…"));
+        SetBusy(true, "Подготовка игровых файлов…");
         try
         {
             string root = FilesDir!.AbsolutePath;
@@ -48,7 +48,7 @@ public sealed partial class MainActivity : Activity
                 string executable = Path.Combine(root, "Terraria/Terraria.exe");
                 using var owned = File.OpenRead(executable);
                 if (!Convert.ToHexString(SHA256.HashData(owned)).Equals(TerrariaHash, StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidDataException("O executável precisa ser o Terraria PC 1.4.5.8 importado.");
+                    throw new InvalidDataException("Требуется импортированный Terraria PC 1.4.5.8.");
                 string marker = Path.Combine(root, "game/.payload-version");
                 if (!File.Exists(marker) || File.ReadAllText(marker) != "0.2.18")
                 {
@@ -63,10 +63,10 @@ public sealed partial class MainActivity : Activity
                     finally { if (File.Exists(cache)) File.Delete(cache); }
                 }
             });
-            SetBusy(false, L("Abrindo o jogo…", "Opening game…", "Abriendo el juego…"));
+            SetBusy(false, "Запуск игры…");
             Launch("game");
         }
-        catch (Exception error) { SetBusy(false, L("Não foi possível iniciar: ", "Could not start: ", "No se pudo iniciar: ") + error.Message); }
+        catch (Exception error) { SetBusy(false, "Не удалось запустить: " + error.Message); }
     }
 
     private static void ExtractPayload(string archive, string target)
@@ -80,9 +80,9 @@ public sealed partial class MainActivity : Activity
             string name = entry.FullName.Replace('\\', '/');
             if (!name.StartsWith("game/") || name.EndsWith('/')) continue;
             bytes += entry.Length;
-            if (bytes > 512L * 1024 * 1024) throw new InvalidDataException("Pacote do jogo excede o tamanho esperado.");
+            if (bytes > 512L * 1024 * 1024) throw new InvalidDataException("Игровой пакет превышает допустимый размер.");
             string path = Path.GetFullPath(Path.Combine(target, name[5..]));
-            if (!path.StartsWith(prefix, StringComparison.Ordinal)) throw new InvalidDataException("Caminho inválido no pacote.");
+            if (!path.StartsWith(prefix, StringComparison.Ordinal)) throw new InvalidDataException("Недопустимый путь в пакете.");
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             entry.ExtractToFile(path, overwrite: true);
         }
@@ -94,21 +94,21 @@ public sealed partial class MainActivity : Activity
         if (resultCode != Result.Ok || data == null) return;
         if (requestCode == 13 && data.Data != null)
         {
-            SetBusy(true, L("Salvando diagnóstico…", "Saving diagnostics…", "Guardando diagnóstico…"));
+            SetBusy(true, "Сохранение диагностики…");
             try
             {
-                using var output = ContentResolver!.OpenOutputStream(data.Data, "wt") ?? throw new IOException("Arquivo indisponível.");
+                using var output = ContentResolver!.OpenOutputStream(data.Data, "wt") ?? throw new IOException("Файл недоступен.");
                 await using (var writer = new StreamWriter(output, new System.Text.UTF8Encoding(false), leaveOpen: true))
                     await writer.WriteAsync(exportReport);
-                SetBusy(false, L("Diagnóstico salvo em .txt.", "Diagnostics saved as .txt.", "Diagnóstico guardado en .txt."));
+                SetBusy(false, "Диагностика сохранена в .txt.");
             }
-            catch (Exception e) { SetBusy(false, L("Não foi possível salvar: ", "Could not save: ", "No se pudo guardar: ") + e.Message); }
+            catch (Exception e) { SetBusy(false, "Не удалось сохранить: " + e.Message); }
             return;
         }
         if (requestCode == 11) { await ImportModsAsync(data); return; }
         if (requestCode == 12 && data.Data != null) { await ImportThemeAsync(data.Data); return; }
         if (requestCode != 10 || data.Data == null) return;
-        SetBusy(true, L("Importando Terraria. Mantenha o aplicativo aberto…", "Importing Terraria. Keep the app open…", "Importando Terraria. Mantén la aplicación abierta…"));
+        SetBusy(true, "Импорт Terraria. Не закрывайте приложение…");
         string cached = Path.Combine(CacheDir!.AbsolutePath, "terraria-import.zip");
         string root = FilesDir!.AbsolutePath;
         string staging = Path.Combine(root, "Terraria.import-" + Guid.NewGuid());
@@ -123,9 +123,9 @@ public sealed partial class MainActivity : Activity
             try { Directory.Move(staging, destination); }
             catch { if (Directory.Exists(backup)) Directory.Move(backup, destination); throw; }
             if (Directory.Exists(backup)) Directory.Delete(backup, recursive: true);
-            BuildLauncher(); SetBusy(false, L("Terraria 1.4.5.8 importado. Pronto para iniciar.", "Terraria 1.4.5.8 imported. Ready to launch.", "Terraria 1.4.5.8 importado. Listo para iniciar."));
+            BuildLauncher(); SetBusy(false, "Terraria 1.4.5.8 импортирована. Всё готово к запуску.");
         }
-        catch (Exception error) { SetBusy(false, L("Falha ao importar: ", "Import failed: ", "Error al importar: ") + error.Message); }
+        catch (Exception error) { SetBusy(false, "Ошибка импорта: " + error.Message); }
         finally
         {
             if (File.Exists(cached)) File.Delete(cached);
@@ -146,15 +146,15 @@ public sealed partial class MainActivity : Activity
             string? relative = content >= 0 ? name[content..] : name.EndsWith("Terraria.exe", StringComparison.Ordinal) ? "Terraria.exe" : null;
             if (relative == null || relative.EndsWith('/')) continue;
             total += entry.Length;
-            if (total > 1200L * 1024 * 1024) throw new InvalidDataException("Conteúdo maior que o esperado.");
+            if (total > 1200L * 1024 * 1024) throw new InvalidDataException("Размер содержимого превышает допустимый.");
             string path = Path.GetFullPath(Path.Combine(target, relative));
-            if (!path.StartsWith(prefix, StringComparison.Ordinal)) throw new InvalidDataException("Caminho inválido no ZIP.");
+            if (!path.StartsWith(prefix, StringComparison.Ordinal)) throw new InvalidDataException("Недопустимый путь в ZIP.");
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             entry.ExtractToFile(path, overwrite: true);
         }
         using var executable = File.OpenRead(Path.Combine(target, "Terraria.exe"));
         if (!Convert.ToHexString(SHA256.HashData(executable)).Equals(TerrariaHash, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidDataException("O ZIP precisa conter o Terraria PC 1.4.5.8 que validamos.");
+            throw new InvalidDataException("ZIP должен содержать совместимую версию Terraria PC 1.4.5.8.");
         var issues = ContentPreflight.Validate(Path.Combine(target, "Content"), Path.Combine(target, "Overrides"));
         if (issues.Count > 0) throw new InvalidDataException(issues[0].Asset + ": " + issues[0].Reason);
     }
