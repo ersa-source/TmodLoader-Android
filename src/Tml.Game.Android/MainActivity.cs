@@ -16,7 +16,7 @@ public sealed partial class MainActivity : Activity
     private TextView? status;
     private Button? play, import;
     private bool busy;
-    private const string TerrariaHash = "960a03bff6050cf7be16dfc1a7b19e10fc2c4f8f835a6a3b135a50dd9e6ba2f3";
+    private const string TerrariaHash = "d5d28781fef4581f6eb3d60d36ee612d26a0e288cfea78b3b58cbf88d15bbe88";
 
     protected override void OnCreate(Bundle? state)
     {
